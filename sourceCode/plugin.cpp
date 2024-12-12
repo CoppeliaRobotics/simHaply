@@ -72,6 +72,13 @@ public:
             closeInverse3_out argout;
             closeInverse3(&argin, &argout);
         }
+        for(auto dev : handleHandles.find(scriptHandle))
+        {
+            closeHandle_in argin;
+            argin.handle = handleHandles.toHandle(dev);
+            closeHandle_out argout;
+            closeHandle(&argin, &argout);
+        }
     }
 
     void detectInverse3s(detectInverse3s_in *in, detectInverse3s_out *out)

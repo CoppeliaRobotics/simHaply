@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<?xml-stylesheet type="text/xsl" href="callbacks.xsl"?>
+
+<plugin name="simHaply" author="federico.ferri.it@gmail.com">
+    <description></description>
+    <command name="detectInverse3s">
+        <description></description>
+        <params>
+        </params>
+        <return>
+            <param name="ports" type="table" item-type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="detectHandles">
+        <description></description>
+        <params>
+        </params>
+        <return>
+            <param name="ports" type="table" item-type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="detectWiredHandles">
+        <description></description>
+        <params>
+        </params>
+        <return>
+            <param name="ports" type="table" item-type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="detectWirelessHandles">
+        <description></description>
+        <params>
+        </params>
+        <return>
+            <param name="ports" type="table" item-type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="openInverse3">
+        <description></description>
+        <params>
+            <param name="port" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="deviceId" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="openHandle">
+        <description></description>
+        <params>
+            <param name="port" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="deviceId" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="closeInverse3">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+        </return>
+    </command>
+    <command name="closeHandle">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+        </return>
+    </command>
+    <command name="firmwareVersionExtQuery">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="uuid" type="buffer">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="jointTorques">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="torques" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="angles" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+            <param name="angularVelocities" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="jointAngles">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="angles" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="angles" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+            <param name="angularVelocities" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="endEffectorForce">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="force" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+            <param name="onboard" type="bool" default="true">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="position" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+            <param name="velocity" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="endEffectorPosition">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="position" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="position" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+            <param name="velocity" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="deviceOrientationQuery">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="quaternion" type="table" item-type="float" size="4">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="devicePowerQuery">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="powered" type="bool">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="deviceTemperatureQuery">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="temperature" type="bool">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="motorCurrentsQuery">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="currents" type="table" item-type="float" size="3">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="getDeviceHandedness">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handedness" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="setDeviceHandedness">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="handedness" type="int">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handedness" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="getTorqueScaling">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="enabled" type="bool">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="setTorqueScaling">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="enabled" type="bool">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="enabled" type="bool">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="getGravityCompensation">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="enabled" type="bool">
+                <description></description>
+            </param>
+            <param name="gravity_scale_factor" type="float">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="setGravityCompensation">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="enabled" type="bool">
+                <description></description>
+            </param>
+            <param name="gravity_scale_factor" type="float">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="enabled" type="bool">
+                <description></description>
+            </param>
+            <param name="gravity_scale_factor" type="float">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="saveConfig">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="parameters_updated" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="getVersegripStatus">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="device_id" type="int">
+                <description></description>
+            </param>
+            <param name="quaternion" type="table" item-type="float" size="4">
+                <description></description>
+            </param>
+            <param name="error_flag" type="int">
+                <description></description>
+            </param>
+            <param name="hall_effect_sensor_level" type="int">
+                <description></description>
+            </param>
+            <param name="buttons" type="int">
+                <description></description>
+            </param>
+            <param name="battery_level" type="float">
+                <description></description>
+            </param>
+            <param name="q" type="table" item-type="float" size="4">
+                <description></description>
+            </param>
+        </return>
+    </command>
+</plugin>

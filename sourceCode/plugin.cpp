@@ -54,7 +54,7 @@ struct Haply_Handle
     Haply::HardwareAPI::Devices::Handle *device;
 };
 
-struct HaplyControlLoop : public Haply_Inverse3
+struct Haply_Inverse3_Ctrl : public Haply_Inverse3
 {
     void tick()
     {
@@ -112,7 +112,7 @@ struct HaplyControlLoop : public Haply_Inverse3
     void start()
     {
         running.store(true);
-        control_thread = std::thread(&HaplyControlLoop::run, this);
+        control_thread = std::thread(&Haply_Inverse3_Ctrl::run, this);
     }
 
     void stop()
@@ -124,7 +124,7 @@ struct HaplyControlLoop : public Haply_Inverse3
         }
     }
 
-    ~HaplyControlLoop()
+    ~Haply_Inverse3_Ctrl()
     {
         stop();
     }
@@ -143,6 +143,8 @@ private:
 class Plugin : public sim::Plugin
 {
 public:
+    template<typename T> T * get(const std::string &h) { return nullptr; }
+
     void onInit()
     {
         if(!registerScriptStuff())
@@ -154,46 +156,9 @@ public:
 
     void onScriptStateAboutToBeDestroyed(int scriptHandle, long long scriptUid)
     {
-        for(auto dev : inverse3Handles.find(scriptHandle))
-        {
-            closeInverse3_in argin;
-            argin.handle = inverse3Handles.toHandle(dev);
-            closeInverse3_out argout;
-            closeInverse3(&argin, &argout);
-        }
-        for(auto dev : handleHandles.find(scriptHandle))
-        {
-            closeHandle_in argin;
-            argin.handle = handleHandles.toHandle(dev);
-            closeHandle_out argout;
-            closeHandle(&argin, &argout);
-        }
-    }
-
-    void detectInverse3s(detectInverse3s_in *in, detectInverse3s_out *out)
-    {
-        out->ports = Haply::HardwareAPI::Devices::DeviceDetection::DetectInverse3s();
-    }
-
-    void detectHandles(detectHandles_in *in, detectHandles_out *out)
-    {
-        out->ports = Haply::HardwareAPI::Devices::DeviceDetection::DetectHandles();
-    }
-
-    void detectWiredHandles(detectWiredHandles_in *in, detectWiredHandles_out *out)
-    {
-        out->ports = Haply::HardwareAPI::Devices::DeviceDetection::DetectWiredHandles();
-    }
-
-    void detectWirelessHandles(detectWirelessHandles_in *in, detectWirelessHandles_out *out)
-    {
-        out->ports = Haply::HardwareAPI::Devices::DeviceDetection::DetectWirelessHandles();
-    }
-
-    template<typename T>
-    T * get(const std::string &h)
-    {
-        throw std::runtime_error("invalid template arg");
+        cleanupInverse3Handles();
+        cleanupHandleHandles();
+        cleanupInverse3CtrlHandles();
     }
 
     template<>
@@ -205,22 +170,9 @@ public:
         return item;
     }
 
-    template<>
-    Haply_Handle * get(const std::string &h)
+    void detectInverse3s(detectInverse3s_in *in, detectInverse3s_out *out)
     {
-        auto *item = handleHandles.get(h);
-        if(!item)
-            throw std::runtime_error("invalid Handle handle");
-        return item;
-    }
-
-    template<>
-    HaplyControlLoop * get(const std::string &h)
-    {
-        auto *item = controlLoopHandles.get(h);
-        if(!item)
-            throw std::runtime_error("invalid HaplyControlLoop handle");
-        return item;
+        out->ports = Haply::HardwareAPI::Devices::DeviceDetection::DetectInverse3s();
     }
 
     void openInverse3(openInverse3_in *in, openInverse3_out *out)
@@ -234,18 +186,6 @@ public:
         out->deviceId = resp.device_id;
     }
 
-    void openHandle(openHandle_in *in, openHandle_out *out)
-    {
-        auto *item = new Haply_Handle;
-        item->serial_stream = new Haply::HardwareAPI::IO::SerialStream(in->port.c_str());
-        auto *dev = item->device = new Haply::HardwareAPI::Devices::Handle(item->serial_stream);
-        out->handle = handleHandles.add(item, in->_.scriptID);
-
-        dev->SendDeviceWakeup();
-        dev->RequestStatus();
-        out->deviceId = -1;
-    }
-
     void closeInverse3(closeInverse3_in *in, closeInverse3_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
@@ -254,12 +194,15 @@ public:
         delete inverse3Handles.remove(item);
     }
 
-    void closeHandle(closeHandle_in *in, closeHandle_out *out)
+    void cleanupInverse3Handles()
     {
-        auto *item = get<Haply_Handle>(in->handle);
-        delete item->device;
-        delete item->serial_stream;
-        delete handleHandles.remove(item);
+        for(auto dev : inverse3Handles.find(scriptHandle))
+        {
+            closeInverse3_in argin;
+            argin.handle = inverse3Handles.toHandle(dev);
+            closeInverse3_out argout;
+            closeInverse3(&argin, &argout);
+        }
     }
 
     void firmwareVersionExtQuery(firmwareVersionExtQuery_in *in, firmwareVersionExtQuery_out *out)
@@ -411,6 +354,61 @@ public:
         out->parameters_updated = resp.parameters_updated;
     }
 
+    template<>
+    Haply_Handle * get(const std::string &h)
+    {
+        auto *item = handleHandles.get(h);
+        if(!item)
+            throw std::runtime_error("invalid Handle handle");
+        return item;
+    }
+
+    void detectHandles(detectHandles_in *in, detectHandles_out *out)
+    {
+        out->ports = Haply::HardwareAPI::Devices::DeviceDetection::DetectHandles();
+    }
+
+    void detectWiredHandles(detectWiredHandles_in *in, detectWiredHandles_out *out)
+    {
+        out->ports = Haply::HardwareAPI::Devices::DeviceDetection::DetectWiredHandles();
+    }
+
+    void detectWirelessHandles(detectWirelessHandles_in *in, detectWirelessHandles_out *out)
+    {
+        out->ports = Haply::HardwareAPI::Devices::DeviceDetection::DetectWirelessHandles();
+    }
+
+    void openHandle(openHandle_in *in, openHandle_out *out)
+    {
+        auto *item = new Haply_Handle;
+        item->serial_stream = new Haply::HardwareAPI::IO::SerialStream(in->port.c_str());
+        auto *dev = item->device = new Haply::HardwareAPI::Devices::Handle(item->serial_stream);
+        out->handle = handleHandles.add(item, in->_.scriptID);
+
+        dev->SendDeviceWakeup();
+        dev->RequestStatus();
+        out->deviceId = -1;
+    }
+
+    void closeHandle(closeHandle_in *in, closeHandle_out *out)
+    {
+        auto *item = get<Haply_Handle>(in->handle);
+        delete item->device;
+        delete item->serial_stream;
+        delete handleHandles.remove(item);
+    }
+
+    void cleanupHandleHandles()
+    {
+        for(auto dev : handleHandles.find(scriptHandle))
+        {
+            closeHandle_in argin;
+            argin.handle = handleHandles.toHandle(dev);
+            closeHandle_out argout;
+            closeHandle(&argin, &argout);
+        }
+    }
+
     void getVersegripStatus(getVersegripStatus_in *in, getVersegripStatus_out *out)
     {
         auto *dev = get<Haply_Handle>(in->handle)->device;
@@ -427,12 +425,21 @@ public:
         out->q.push_back(resp.q.w);
     }
 
+    template<>
+    Haply_Inverse3_Ctrl * get(const std::string &h)
+    {
+        auto *item = inverse3CtrlHandles.get(h);
+        if(!item)
+            throw std::runtime_error("invalid Haply_Inverse3_Ctrl handle");
+        return item;
+    }
+
     void startControlLoop(startControlLoop_in *in, startControlLoop_out *out)
     {
-        auto *item = new HaplyControlLoop;
+        auto *item = new Haply_Inverse3_Ctrl;
         item->serial_stream = new Haply::HardwareAPI::IO::SerialStream(in->port.c_str());
         auto *dev = item->device = new Haply::HardwareAPI::Devices::Inverse3(item->serial_stream);
-        out->handle = controlLoopHandles.add(item, in->_.scriptID);
+        out->handle = inverse3CtrlHandles.add(item, in->_.scriptID);
 
         Haply::HardwareAPI::Devices::Inverse3::DeviceInfoResponse resp = dev->DeviceWakeup();
 
@@ -441,18 +448,29 @@ public:
 
     void stopControlLoop(stopControlLoop_in *in, stopControlLoop_out *out)
     {
-        auto *item = get<HaplyControlLoop>(in->handle);
+        auto *item = get<Haply_Inverse3_Ctrl>(in->handle);
 
         item->stop();
 
         delete item->device;
         delete item->serial_stream;
-        delete controlLoopHandles.remove(item);
+        delete inverse3CtrlHandles.remove(item);
+    }
+
+    void cleanupInverse3CtrlHandles()
+    {
+        for(auto dev : inverse3CtrlHandles.find(scriptHandle))
+        {
+            stopControlLoop_in argin;
+            argin.handle = inverse3CtrlHandles.toHandle(dev);
+            stopControlLoop_out argout;
+            stopControlLoop(&argin, &argout);
+        }
     }
 
     void setControlLoopParams(setControlLoopParams_in *in, setControlLoopParams_out *out)
     {
-        auto *item = get<HaplyControlLoop>(in->handle);
+        auto *item = get<Haply_Inverse3_Ctrl>(in->handle);
         item->kf = in->kf;
         item->maxf = in->maxf;
         item->px = in->p[0];
@@ -469,7 +487,7 @@ public:
 private:
     sim::Handles<Haply_Inverse3*> inverse3Handles{"Haply_Inverse3"};
     sim::Handles<Haply_Handle*> handleHandles{"Haply_Handle"};
-    sim::Handles<HaplyControlLoop*> controlLoopHandles{"HaplyControlLoop"};
+    sim::Handles<Haply_Inverse3_Ctrl*> inverse3CtrlHandles{"Haply_Inverse3_Ctrl"};
 };
 
 SIM_PLUGIN(Plugin)

@@ -13,36 +13,6 @@
             </param>
         </return>
     </command>
-    <command name="detectHandles">
-        <description></description>
-        <params>
-        </params>
-        <return>
-            <param name="ports" type="table" item-type="string">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="detectWiredHandles">
-        <description></description>
-        <params>
-        </params>
-        <return>
-            <param name="ports" type="table" item-type="string">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="detectWirelessHandles">
-        <description></description>
-        <params>
-        </params>
-        <return>
-            <param name="ports" type="table" item-type="string">
-                <description></description>
-            </param>
-        </return>
-    </command>
     <command name="openInverse3">
         <description></description>
         <params>
@@ -59,33 +29,7 @@
             </param>
         </return>
     </command>
-    <command name="openHandle">
-        <description></description>
-        <params>
-            <param name="port" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-            <param name="deviceId" type="int">
-                <description></description>
-            </param>
-        </return>
-    </command>
     <command name="closeInverse3">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-        </return>
-    </command>
-    <command name="closeHandle">
         <description></description>
         <params>
             <param name="handle" type="string">
@@ -346,6 +290,62 @@
             <param name="parameters_updated" type="int">
                 <description></description>
             </param>
+        </return>
+    </command>
+    <command name="detectHandles">
+        <description></description>
+        <params>
+        </params>
+        <return>
+            <param name="ports" type="table" item-type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="detectWiredHandles">
+        <description></description>
+        <params>
+        </params>
+        <return>
+            <param name="ports" type="table" item-type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="detectWirelessHandles">
+        <description></description>
+        <params>
+        </params>
+        <return>
+            <param name="ports" type="table" item-type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="openHandle">
+        <description></description>
+        <params>
+            <param name="port" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="deviceId" type="int">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="closeHandle">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
         </return>
     </command>
     <command name="getVersegripStatus">

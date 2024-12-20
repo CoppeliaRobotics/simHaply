@@ -54,3 +54,7 @@ add_dependencies(simHaply hwapi-${HWAPI_VER})
 target_link_libraries(simHaply PRIVATE Haply.HardwareAPI)
 
 coppeliasim_add_lua(lua/models/Haply_device_customization-1.lua SUBDIR models)
+
+add_executable(haply_test sourceCode/haply_test.cpp)
+add_dependencies(haply_test hwapi-${HWAPI_VER})
+target_link_libraries(haply_test PRIVATE Haply.HardwareAPI)

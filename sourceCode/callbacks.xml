@@ -24,9 +24,6 @@
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="deviceId" type="int">
-                <description></description>
-            </param>
         </return>
     </command>
     <command name="closeInverse3">
@@ -39,7 +36,7 @@
         <return>
         </return>
     </command>
-    <command name="firmwareVersionExtQuery">
+    <command name="setInverse3Free">
         <description></description>
         <params>
             <param name="handle" type="string">
@@ -47,91 +44,67 @@
             </param>
         </params>
         <return>
-            <param name="uuid" type="buffer">
-                <description></description>
-            </param>
         </return>
     </command>
-    <command name="jointTorques">
+    <command name="setInverse3TargetPosition">
         <description></description>
         <params>
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="torques" type="table" item-type="float" size="3">
+            <param name="target_position" type="table" item-type="double" size="3">
                 <description></description>
             </param>
         </params>
         <return>
-            <param name="angles" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
-            <param name="angularVelocities" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
         </return>
     </command>
-    <command name="jointAngles">
+    <command name="setInverse3TargetForce">
         <description></description>
         <params>
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="angles" type="table" item-type="float" size="3">
+            <param name="target_force" type="table" item-type="double" size="3">
                 <description></description>
             </param>
         </params>
         <return>
-            <param name="angles" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
-            <param name="angularVelocities" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
         </return>
     </command>
-    <command name="endEffectorForce">
+    <command name="setInverse3Constraint">
         <description></description>
         <params>
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="force" type="table" item-type="float" size="3">
+            <param name="p" type="table" item-type="double" size="3">
                 <description></description>
             </param>
-            <param name="onboard" type="bool" default="true">
+            <param name="n" type="table" item-type="double" size="3">
                 <description></description>
             </param>
         </params>
         <return>
-            <param name="position" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
-            <param name="velocity" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
         </return>
     </command>
-    <command name="endEffectorPosition">
+    <command name="setInverse3ConstraintForce">
         <description></description>
         <params>
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="position" type="table" item-type="float" size="3">
+            <param name="kf" type="double">
+                <description></description>
+            </param>
+            <param name="maxf" type="double">
                 <description></description>
             </param>
         </params>
         <return>
-            <param name="position" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
-            <param name="velocity" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
         </return>
     </command>
-    <command name="deviceOrientationQuery">
+    <command name="getInverse3Position">
         <description></description>
         <params>
             <param name="handle" type="string">
@@ -139,12 +112,12 @@
             </param>
         </params>
         <return>
-            <param name="quaternion" type="table" item-type="float" size="4">
+            <param name="position" type="table" item-type="double" size="3">
                 <description></description>
             </param>
         </return>
     </command>
-    <command name="devicePowerQuery">
+    <command name="getInverse3Velocity">
         <description></description>
         <params>
             <param name="handle" type="string">
@@ -152,146 +125,17 @@
             </param>
         </params>
         <return>
-            <param name="powered" type="bool">
+            <param name="velocity" type="table" item-type="double" size="3">
                 <description></description>
             </param>
         </return>
     </command>
-    <command name="deviceTemperatureQuery">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="temperature" type="bool">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="motorCurrentsQuery">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="currents" type="table" item-type="float" size="3">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="getDeviceHandedness">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="handedness" type="int">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="setDeviceHandedness">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-            <param name="handedness" type="int">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="handedness" type="int">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="getTorqueScaling">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="enabled" type="bool">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="setTorqueScaling">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-            <param name="enabled" type="bool">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="enabled" type="bool">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="getGravityCompensation">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="enabled" type="bool">
-                <description></description>
-            </param>
-            <param name="gravity_scale_factor" type="float">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="setGravityCompensation">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-            <param name="enabled" type="bool">
-                <description></description>
-            </param>
-            <param name="gravity_scale_factor" type="float">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="enabled" type="bool">
-                <description></description>
-            </param>
-            <param name="gravity_scale_factor" type="float">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="saveConfig">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="parameters_updated" type="int">
-                <description></description>
-            </param>
-        </return>
-    </command>
+    <enum name="simhaply_mode" item-prefix="mode_" base="67061">
+        <item name="free"></item>
+        <item name="position_ctrl"></item>
+        <item name="force_ctrl"></item>
+        <item name="constraint"></item>
+    </enum>
     <command name="detectHandles">
         <description></description>
         <params>
@@ -333,9 +177,6 @@
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="deviceId" type="int">
-                <description></description>
-            </param>
         </return>
     </command>
     <command name="closeHandle">
@@ -348,7 +189,7 @@
         <return>
         </return>
     </command>
-    <command name="getVersegripStatus">
+    <command name="getHandleQuaternion">
         <description></description>
         <params>
             <param name="handle" type="string">
@@ -356,43 +197,25 @@
             </param>
         </params>
         <return>
-            <param name="device_id" type="int">
+            <param name="quaternion" type="table" item-type="double" size="4">
                 <description></description>
             </param>
-            <param name="quaternion" type="table" item-type="float" size="4">
+        </return>
+    </command>
+    <command name="getHandleButtons">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="error_flag" type="int">
-                <description></description>
-            </param>
-            <param name="hall_effect_sensor_level" type="int">
-                <description></description>
-            </param>
+        </params>
+        <return>
             <param name="buttons" type="int">
                 <description></description>
             </param>
-            <param name="battery_level" type="float">
-                <description></description>
-            </param>
-            <param name="q" type="table" item-type="float" size="4">
-                <description></description>
-            </param>
         </return>
     </command>
-    <command name="startControlLoop">
-        <description></description>
-        <params>
-            <param name="port" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </return>
-    </command>
-    <command name="stopControlLoop">
+    <command name="getHandleBatteryLevel">
         <description></description>
         <params>
             <param name="handle" type="string">
@@ -400,22 +223,9 @@
             </param>
         </params>
         <return>
-        </return>
-    </command>
-    <command name="setControlLoopParams">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
+            <param name="battery_level" type="double">
                 <description></description>
             </param>
-            <param name="kf" type="double"><description></description></param>
-            <param name="maxf" type="double"><description></description></param>
-            <param name="p" type="table" item-type="double" size="3"><description></description></param>
-            <param name="n" type="table" item-type="double" size="3"><description></description></param>
-        </params>
-        <return>
-            <param name="tip" type="table" item-type="double" size="3"><description></description></param>
         </return>
     </command>
-
 </plugin>

@@ -33,6 +33,8 @@
 #include <chrono>
 #include <thread>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 #include "HardwareAPI.h"
 
@@ -42,102 +44,344 @@
 #include <simPlusPlus/Handles.h>
 #include "stubs.h"
 
-struct Haply_Inverse3
+template<typename T, size_t N>
+std::vector<T> toVector(const std::array<T, N> &a)
 {
-    Haply::HardwareAPI::IO::SerialStream *serial_stream;
-    Haply::HardwareAPI::Devices::Inverse3 *device;
-};
+    std::vector<T> v;
+    for(size_t i = 0; i < N; i++)
+        v.push_back(a[i]);
+    return v;
+}
 
-struct Haply_Handle
+template<typename T, size_t N>
+std::array<T, N> toArray(const std::vector<T> &v)
 {
-    Haply::HardwareAPI::IO::SerialStream *serial_stream;
-    Haply::HardwareAPI::Devices::Handle *device;
-};
+    std::array<T, N> a;
+    for(size_t i = 0; i < std::min(v.size(), N); i++)
+        a[i] = v[i];
+    return a;
+}
 
-struct Haply_Inverse3_Ctrl : public Haply_Inverse3
+template<typename T, int initMode>
+struct Haply_Device
 {
-    void tick()
+    Haply_Device(const std::string &port)
+        : port(port)
     {
-        double norm = std::sqrt(nx * nx + ny * ny + nz * nz);
-        double unx = nx / norm;
-        double uny = ny / norm;
-        double unz = nz / norm;
-        double dx = x - px;
-        double dy = y - py;
-        double dz = z - pz;
-        double sdf = std::min(maxf, std::max(-maxf, kf * std::min(0., dx * unx + dy * uny + dz * unz)));
-        Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
-        if(!first_tick)
+        std::cout << "Haply_Device[" << port << "]: opening" << std::endl;
+
+        serial_stream = new Haply::HardwareAPI::IO::SerialStream(port.c_str());
+        device = new T(serial_stream);
+        if constexpr(initMode == 1)
         {
-            req.force[0] = -unx * sdf;
-            req.force[1] = -uny * sdf;
-            req.force[2] = -unz * sdf;
+            Haply::HardwareAPI::Devices::Inverse3::DeviceInfoResponse resp = device->DeviceWakeup();
         }
-        first_tick = false;
-        Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
-        x = resp.position[0];
-        y = resp.position[1];
-        z = resp.position[2];
+        else if constexpr(initMode == 2)
+        {
+            device->SendDeviceWakeup();
+            device->RequestStatus();
+        }
+    }
+
+    virtual ~Haply_Device()
+    {
+        delete device;
+        delete serial_stream;
+
+        std::cout << "Haply_Device[" << port << "]: closed" << std::endl;
+    }
+
+protected:
+    std::string port;
+    Haply::HardwareAPI::IO::SerialStream *serial_stream;
+    T *device;
+};
+
+struct ControlLoop
+{
+    ControlLoop(const std::string &name)
+        : name(name)
+    {
+        start();
+    }
+
+    virtual ~ControlLoop()
+    {
+        stop();
+    }
+
+    virtual void tick()
+    {
     }
 
     void run()
     {
+        std::cout << "ControlLoop[" << name << "] starting" << std::endl;
+
         using clock = std::chrono::steady_clock;
         constexpr std::chrono::microseconds target_duration(1000); // 1 kHz = 1000 microseconds
-
         auto next_tick = clock::now();
 
         while(running.load())
         {
             next_tick += target_duration;
 
+            auto start = std::chrono::steady_clock::now();
             tick();
+            auto end = std::chrono::steady_clock::now();
+            int elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            if(elapsed_ms > 100)
+                std::cout << "ControlLoop[" << name << "] warning: executing a tick took " << elapsed_ms << "ms" << std::endl;
+
+            tick_num++;
 
             auto now = clock::now();
-#if 0
-            std::cout << std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count() << "us  x: " << x << "  y: " << y << "  z: " << z << std::endl;
-#endif
-
             if(next_tick > now)
             {
                 std::this_thread::sleep_until(next_tick);
             }
             else
             {
-                // Optional: Handle overrun (e.g., logging or adjusting next_tick).
+                // Handle overrun
             }
         }
+
+        std::cout << "ControlLoop[" << name << "] terminated" << std::endl;
     }
 
+private:
     void start()
     {
+        tick_num = 0;
         running.store(true);
-        control_thread = std::thread(&Haply_Inverse3_Ctrl::run, this);
+        control_thread = std::thread(&ControlLoop::run, this);
     }
 
     void stop()
     {
         running.store(false);
-        if(control_thread.joinable())
+        if(control_thread.joinable()) control_thread.join();
+    }
+
+protected:
+    int tick_num;
+    std::mutex mtx;
+
+private:
+    std::string name;
+    std::atomic<bool> running{false};
+    std::thread control_thread;
+};
+
+struct Haply_Inverse3 : public Haply_Device<Haply::HardwareAPI::Devices::Inverse3, 1>, public ControlLoop
+{
+    Haply_Inverse3(const std::string &port)
+        : Haply_Device<Haply::HardwareAPI::Devices::Inverse3, 1>(port),
+          ControlLoop("Inverse3")
+    {
+    }
+
+    void tick()
+    {
+        simhaply_mode m;
         {
-            control_thread.join();
+            std::lock_guard<std::mutex> lock(mtx);
+            m = mode;
+        }
+        switch(m)
+        {
+            case simhaply_mode_free:
+            {
+                Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
+                {
+                    std::lock_guard<std::mutex> lock(mtx);
+                    req.force[0] = 0;
+                    req.force[1] = 0;
+                    req.force[2] = 0;
+                }
+                Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
+                {
+                    std::lock_guard<std::mutex> lock(mtx);
+                    position[0] = resp.position[0];
+                    position[1] = resp.position[1];
+                    position[2] = resp.position[2];
+                    velocity[0] = resp.velocity[0];
+                    velocity[1] = resp.velocity[1];
+                    velocity[2] = resp.velocity[2];
+                }
+            }
+            break;
+            case simhaply_mode_position_ctrl:
+            {
+            }
+            break;
+            case simhaply_mode_force_ctrl:
+            {
+                Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
+                {
+                    std::lock_guard<std::mutex> lock(mtx);
+#if 1
+                    req.force[0] = 0;
+                    req.force[1] = 0;
+                    req.force[2] = 0;
+#else
+                    req.force[0] = target_force[0];
+                    req.force[1] = target_force[1];
+                    req.force[2] = target_force[2];
+#endif
+                }
+                Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
+                {
+                    std::lock_guard<std::mutex> lock(mtx);
+                    position[0] = resp.position[0];
+                    position[1] = resp.position[1];
+                    position[2] = resp.position[2];
+                    velocity[0] = resp.velocity[0];
+                    velocity[1] = resp.velocity[1];
+                    velocity[2] = resp.velocity[2];
+                }
+            }
+            break;
+            case simhaply_mode_constraint:
+            {
+                Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
+                {
+                    std::lock_guard<std::mutex> lock(mtx);
+                    double norm = std::sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+                    double unx = n[0] / norm;
+                    double uny = n[1] / norm;
+                    double unz = n[2] / norm;
+                    double dx = position[0] - p[0];
+                    double dy = position[1] - p[1];
+                    double dz = position[2] - p[2];
+                    double sdf = std::min(maxf, std::max(-maxf, kf * std::min(0., dx * unx + dy * uny + dz * unz)));
+                    if(tick_num > 0)
+                    {
+                        req.force[0] = -unx * sdf;
+                        req.force[1] = -uny * sdf;
+                        req.force[2] = -unz * sdf;
+                    }
+                }
+                Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
+                {
+                    std::lock_guard<std::mutex> lock(mtx);
+                    position[0] = resp.position[0];
+                    position[1] = resp.position[1];
+                    position[2] = resp.position[2];
+                    velocity[0] = resp.velocity[0];
+                    velocity[1] = resp.velocity[1];
+                    velocity[2] = resp.velocity[2];
+                }
+            }
+            break;
         }
     }
 
-    ~Haply_Inverse3_Ctrl()
+    void setFree()
     {
-        stop();
+        std::lock_guard<std::mutex> lock(mtx);
+        this->mode = simhaply_mode_free;
     }
 
-    double kf{10.0};
-    double maxf{10.0};
-    double x{0}, y{0}, z{0};
-    double px{0}, py{0}, pz{0}, nx{0}, ny{0}, nz{1};
-    bool first_tick{true};
+    void setTargetPosition(const std::array<double, 3> &target_position)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        this->mode = simhaply_mode_position_ctrl;
+        this->target_position = target_position;
+    }
+
+    void setTargetForce(const std::array<double, 3> &target_force)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        this->mode = simhaply_mode_force_ctrl;
+        this->target_force = target_force;
+    }
+
+    void setConstraint(const std::array<double, 3> &p, const std::array<double, 3> &n)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        this->mode = simhaply_mode_constraint;
+        this->p = p;
+        this->n = n;
+    }
+
+    void setConstraintForce(double kf, double maxf)
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        this->mode = simhaply_mode_constraint;
+        this->kf = kf;
+        this->maxf = maxf;
+    }
+
+    std::array<double, 3> getPosition()
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        return position;
+    }
+
+    std::array<double, 3> getVelocity()
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        return velocity;
+    }
 
 private:
-    std::atomic<bool> running{false};
-    std::thread control_thread;
+    simhaply_mode mode{simhaply_mode_free};
+    std::array<double, 3> target_position;
+    std::array<double, 3> target_force;
+    std::array<double, 3> p;
+    std::array<double, 3> n;
+    std::array<double, 3> position;
+    std::array<double, 3> velocity;
+    double kf{10.0};
+    double maxf{10.0};
+};
+
+struct Haply_Handle : public Haply_Device<Haply::HardwareAPI::Devices::Handle, 2>, public ControlLoop
+{
+    Haply_Handle(const std::string &port)
+        : Haply_Device<Haply::HardwareAPI::Devices::Handle, 2>(port),
+          ControlLoop("Handle")
+    {
+    }
+
+    void tick()
+    {
+        Haply::HardwareAPI::Devices::Handle::VersegripStatusResponse resp = device->GetVersegripStatus();
+
+        if(resp.error_flag)
+        {
+            return;
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            for(int i = 0; i < 4; i++)
+                quaternion[i] = resp.quaternion[i];
+            buttons = resp.buttons;
+            battery_level = resp.battery_level;
+        }
+    }
+
+    std::array<double, 4> getQuaternion()
+    {
+        return quaternion;
+    }
+
+    int getButtons()
+    {
+        return buttons;
+    }
+
+    float getBatteryLevel()
+    {
+        return battery_level;
+    }
+
+private:
+    std::array<double, 4> quaternion;
+    int buttons;
+    float battery_level;
 };
 
 class Plugin : public sim::Plugin
@@ -156,17 +400,15 @@ public:
 
     void onScriptStateAboutToBeDestroyed(int scriptHandle, long long scriptUid)
     {
-        cleanupInverse3Handles();
-        cleanupHandleHandles();
-        cleanupInverse3CtrlHandles();
+        cleanupInverse3Handles(scriptHandle);
+        cleanupHandleHandles(scriptHandle);
     }
 
     template<>
     Haply_Inverse3 * get(const std::string &h)
     {
         auto *item = inverse3Handles.get(h);
-        if(!item)
-            throw std::runtime_error("invalid Inverse3 handle");
+        if(!item) throw std::runtime_error("invalid Inverse3 handle");
         return item;
     }
 
@@ -177,24 +419,17 @@ public:
 
     void openInverse3(openInverse3_in *in, openInverse3_out *out)
     {
-        auto *item = new Haply_Inverse3;
-        item->serial_stream = new Haply::HardwareAPI::IO::SerialStream(in->port.c_str());
-        auto *dev = item->device = new Haply::HardwareAPI::Devices::Inverse3(item->serial_stream);
+        auto *item = new Haply_Inverse3(in->port);
         out->handle = inverse3Handles.add(item, in->_.scriptID);
-
-        Haply::HardwareAPI::Devices::Inverse3::DeviceInfoResponse resp = dev->DeviceWakeup();
-        out->deviceId = resp.device_id;
     }
 
     void closeInverse3(closeInverse3_in *in, closeInverse3_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        delete item->device;
-        delete item->serial_stream;
         delete inverse3Handles.remove(item);
     }
 
-    void cleanupInverse3Handles()
+    void cleanupInverse3Handles(int scriptHandle)
     {
         for(auto dev : inverse3Handles.find(scriptHandle))
         {
@@ -205,161 +440,53 @@ public:
         }
     }
 
-    void firmwareVersionExtQuery(firmwareVersionExtQuery_in *in, firmwareVersionExtQuery_out *out)
+    void setInverse3Free(setInverse3Free_in *in, setInverse3Free_out *out)
     {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::FirmwareVersionExtResponse resp = dev->FirmwareVersionExtQuery();
-        out->uuid = std::string(reinterpret_cast<const char*>(&resp.firmware_version_id.bytes[0]), resp.firmware_version_id.SIZE);
+        auto *item = get<Haply_Inverse3>(in->handle);
+        item->setFree();
     }
 
-    void jointTorques(jointTorques_in *in, jointTorques_out *out)
+    void setInverse3TargetPosition(setInverse3TargetPosition_in *in, setInverse3TargetPosition_out *out)
     {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::JointTorquesRequest req;
-        int n = std::min(in->torques.size(), size_t(Haply::HardwareAPI::Devices::Inverse3::NUM_JOINTS));
-        for(size_t i = 0; i < n; i++) req.torques[i] = in->torques[i];
-        Haply::HardwareAPI::Devices::Inverse3::JointStatesResponse resp = dev->JointTorques(req);
-        out->angles.resize(n);
-        for(size_t i = 0; i < n; i++) out->angles[i] = resp.angles[i];
-        out->angularVelocities.resize(n);
-        for(size_t i = 0; i < n; i++) out->angularVelocities[i] = resp.angularVelocities[i];
+        auto *item = get<Haply_Inverse3>(in->handle);
+        item->setTargetPosition(toArray<double, 3>(in->target_position));
     }
 
-    void jointAngles(jointAngles_in *in, jointAngles_out *out)
+    void setInverse3TargetForce(setInverse3TargetForce_in *in, setInverse3TargetForce_out *out)
     {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::JointAnglesRequest req;
-        int n = std::min(in->angles.size(), size_t(Haply::HardwareAPI::Devices::Inverse3::NUM_JOINTS));
-        for(size_t i = 0; i < n; i++) req.angles[i] = in->angles[i];
-        Haply::HardwareAPI::Devices::Inverse3::JointStatesResponse resp = dev->JointAngles(req);
-        out->angles.resize(n);
-        for(size_t i = 0; i < n; i++) out->angles[i] = resp.angles[i];
-        out->angularVelocities.resize(n);
-        for(size_t i = 0; i < n; i++) out->angularVelocities[i] = resp.angularVelocities[i];
+        auto *item = get<Haply_Inverse3>(in->handle);
+        item->setTargetForce(toArray<double, 3>(in->target_force));
     }
 
-    void endEffectorForce(endEffectorForce_in *in, endEffectorForce_out *out)
+    void setInverse3Constraint(setInverse3Constraint_in *in, setInverse3Constraint_out *out)
     {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
-        int n = std::min(in->force.size(), size_t(Haply::HardwareAPI::VECTOR_SIZE));
-        for(size_t i = 0; i < n; i++) req.force[i] = in->force[i];
-        Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = dev->EndEffectorForce(req, in->onboard);
-        out->position.resize(n);
-        for(size_t i = 0; i < n; i++) out->position[i] = resp.position[i];
-        out->velocity.resize(n);
-        for(size_t i = 0; i < n; i++) out->velocity[i] = resp.velocity[i];
+        auto *item = get<Haply_Inverse3>(in->handle);
+        item->setConstraint(toArray<double, 3>(in->p), toArray<double, 3>(in->n));
     }
 
-    void endEffectorPosition(endEffectorPosition_in *in, endEffectorPosition_out *out)
+    void setInverse3ConstraintForce(setInverse3ConstraintForce_in *in, setInverse3ConstraintForce_out *out)
     {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::EndEffectorPositionRequest req;
-        int n = std::min(in->position.size(), size_t(Haply::HardwareAPI::VECTOR_SIZE));
-        for(size_t i = 0; i < n; i++) req.position[i] = in->position[i];
-        Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = dev->EndEffectorPosition(req);
-        out->position.resize(n);
-        for(size_t i = 0; i < n; i++) out->position[i] = resp.position[i];
-        out->velocity.resize(n);
-        for(size_t i = 0; i < n; i++) out->velocity[i] = resp.velocity[i];
+        auto *item = get<Haply_Inverse3>(in->handle);
+        item->setConstraintForce(in->kf, in->maxf);
     }
 
-    void deviceOrientationQuery(deviceOrientationQuery_in *in, deviceOrientationQuery_out *out)
+    void getInverse3Position(getInverse3Position_in *in, getInverse3Position_out *out)
     {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::DeviceOrientationResponse resp = dev->DeviceOrientationQuery();
-        int n = Haply::HardwareAPI::QUATERNION_SIZE;
-        out->quaternion.resize(n);
-        for(size_t i = 0; i < n; i++) out->quaternion[i] = resp.quaternion[i];
+        auto *item = get<Haply_Inverse3>(in->handle);
+        out->position = toVector<double, 3>(item->getPosition());
     }
 
-    void devicePowerQuery(devicePowerQuery_in *in, devicePowerQuery_out *out)
+    void getInverse3Velocity(getInverse3Velocity_in *in, getInverse3Velocity_out *out)
     {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::DevicePowerResponse resp = dev->DevicePowerQuery();
-        out->powered = resp.powered;
-    }
-
-    void deviceTemperatureQuery(deviceTemperatureQuery_in *in, deviceTemperatureQuery_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::DeviceTemperatureResponse resp = dev->DeviceTemperatureQuery();
-        out->temperature = resp.temperature;
-    }
-
-    void motorCurrentsQuery(motorCurrentsQuery_in *in, motorCurrentsQuery_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::MotorCurrentsResponse resp = dev->MotorCurrentsQuery();
-        int n = Haply::HardwareAPI::Devices::Inverse3::NUM_JOINTS;
-        out->currents.resize(n);
-        for(size_t i = 0; i < n; i++) out->currents[i] = resp.currents[i];
-    }
-
-    void getDeviceHandedness(getDeviceHandedness_in *in, getDeviceHandedness_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::DeviceHandednessPayload resp = dev->GetDeviceHandedness();
-        out->handedness = resp.handedness;
-    }
-
-    void setDeviceHandedness(setDeviceHandedness_in *in, setDeviceHandedness_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::DeviceHandednessPayload req;
-        req.handedness = in->handedness;
-        Haply::HardwareAPI::Devices::Inverse3::DeviceHandednessPayload resp = dev->SetDeviceHandedness(req);
-        out->handedness = resp.handedness;
-    }
-
-    void getTorqueScaling(getTorqueScaling_in *in, getTorqueScaling_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::TorqueScalingPayload resp = dev->GetTorqueScaling();
-        out->enabled = resp.enabled;
-    }
-
-    void setTorqueScaling(setTorqueScaling_in *in, setTorqueScaling_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::TorqueScalingPayload req;
-        req.enabled = in->enabled;
-        Haply::HardwareAPI::Devices::Inverse3::TorqueScalingPayload resp = dev->SetTorqueScaling(req);
-        out->enabled = resp.enabled;
-    }
-
-    void getGravityCompensation(getGravityCompensation_in *in, getGravityCompensation_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::GravityCompensationPayload resp = dev->GetGravityCompensation();
-        out->enabled = resp.enabled;
-        out->gravity_scale_factor = resp.gravity_scale_factor;
-    }
-
-    void setGravityCompensation(setGravityCompensation_in *in, setGravityCompensation_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::GravityCompensationPayload req;
-        req.enabled = in->enabled;
-        req.gravity_scale_factor = in->gravity_scale_factor;
-        Haply::HardwareAPI::Devices::Inverse3::GravityCompensationPayload resp = dev->SetGravityCompensation(req);
-        out->enabled = resp.enabled;
-        out->gravity_scale_factor = resp.gravity_scale_factor;
-    }
-
-    void saveConfig(saveConfig_in *in, saveConfig_out *out)
-    {
-        auto *dev = get<Haply_Inverse3>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Inverse3::SaveConfigResponse resp = dev->SaveConfig();
-        out->parameters_updated = resp.parameters_updated;
+        auto *item = get<Haply_Inverse3>(in->handle);
+        out->velocity = toVector<double, 3>(item->getVelocity());
     }
 
     template<>
     Haply_Handle * get(const std::string &h)
     {
         auto *item = handleHandles.get(h);
-        if(!item)
-            throw std::runtime_error("invalid Handle handle");
+        if(!item) throw std::runtime_error("invalid Handle handle");
         return item;
     }
 
@@ -380,25 +507,17 @@ public:
 
     void openHandle(openHandle_in *in, openHandle_out *out)
     {
-        auto *item = new Haply_Handle;
-        item->serial_stream = new Haply::HardwareAPI::IO::SerialStream(in->port.c_str());
-        auto *dev = item->device = new Haply::HardwareAPI::Devices::Handle(item->serial_stream);
+        auto *item = new Haply_Handle(in->port);
         out->handle = handleHandles.add(item, in->_.scriptID);
-
-        dev->SendDeviceWakeup();
-        dev->RequestStatus();
-        out->deviceId = -1;
     }
 
     void closeHandle(closeHandle_in *in, closeHandle_out *out)
     {
         auto *item = get<Haply_Handle>(in->handle);
-        delete item->device;
-        delete item->serial_stream;
         delete handleHandles.remove(item);
     }
 
-    void cleanupHandleHandles()
+    void cleanupHandleHandles(int scriptHandle)
     {
         for(auto dev : handleHandles.find(scriptHandle))
         {
@@ -409,85 +528,27 @@ public:
         }
     }
 
-    void getVersegripStatus(getVersegripStatus_in *in, getVersegripStatus_out *out)
+    void getHandleQuaternion(getHandleQuaternion_in *in, getHandleQuaternion_out *out)
     {
-        auto *dev = get<Haply_Handle>(in->handle)->device;
-        Haply::HardwareAPI::Devices::Handle::VersegripStatusResponse resp = dev->GetVersegripStatus();
-        out->device_id = resp.device_id;
-        for(int i = 0; i < 4; i++) out->quaternion.push_back(resp.quaternion[i]);
-        out->error_flag = resp.error_flag;
-        out->hall_effect_sensor_level = resp.hall_effect_sensor_level;
-        out->buttons = resp.buttons;
-        out->battery_level = resp.battery_level;
-        out->q.push_back(resp.q.x);
-        out->q.push_back(resp.q.y);
-        out->q.push_back(resp.q.z);
-        out->q.push_back(resp.q.w);
+        auto *item = get<Haply_Handle>(in->handle);
+        out->quaternion = toVector<double, 4>(item->getQuaternion());
     }
 
-    template<>
-    Haply_Inverse3_Ctrl * get(const std::string &h)
+    void getHandleButtons(getHandleButtons_in *in, getHandleButtons_out *out)
     {
-        auto *item = inverse3CtrlHandles.get(h);
-        if(!item)
-            throw std::runtime_error("invalid Haply_Inverse3_Ctrl handle");
-        return item;
+        auto *item = get<Haply_Handle>(in->handle);
+        out->buttons = item->getButtons();
     }
 
-    void startControlLoop(startControlLoop_in *in, startControlLoop_out *out)
+    void getHandleBatteryLevel(getHandleBatteryLevel_in *in, getHandleBatteryLevel_out *out)
     {
-        auto *item = new Haply_Inverse3_Ctrl;
-        item->serial_stream = new Haply::HardwareAPI::IO::SerialStream(in->port.c_str());
-        auto *dev = item->device = new Haply::HardwareAPI::Devices::Inverse3(item->serial_stream);
-        out->handle = inverse3CtrlHandles.add(item, in->_.scriptID);
-
-        Haply::HardwareAPI::Devices::Inverse3::DeviceInfoResponse resp = dev->DeviceWakeup();
-
-        item->start();
-    }
-
-    void stopControlLoop(stopControlLoop_in *in, stopControlLoop_out *out)
-    {
-        auto *item = get<Haply_Inverse3_Ctrl>(in->handle);
-
-        item->stop();
-
-        delete item->device;
-        delete item->serial_stream;
-        delete inverse3CtrlHandles.remove(item);
-    }
-
-    void cleanupInverse3CtrlHandles()
-    {
-        for(auto dev : inverse3CtrlHandles.find(scriptHandle))
-        {
-            stopControlLoop_in argin;
-            argin.handle = inverse3CtrlHandles.toHandle(dev);
-            stopControlLoop_out argout;
-            stopControlLoop(&argin, &argout);
-        }
-    }
-
-    void setControlLoopParams(setControlLoopParams_in *in, setControlLoopParams_out *out)
-    {
-        auto *item = get<Haply_Inverse3_Ctrl>(in->handle);
-        item->kf = in->kf;
-        item->maxf = in->maxf;
-        item->px = in->p[0];
-        item->py = in->p[1];
-        item->pz = in->p[2];
-        item->nx = in->n[0];
-        item->ny = in->n[1];
-        item->nz = in->n[2];
-        out->tip.push_back(item->x);
-        out->tip.push_back(item->y);
-        out->tip.push_back(item->z);
+        auto *item = get<Haply_Handle>(in->handle);
+        out->battery_level = item->getBatteryLevel();
     }
 
 private:
     sim::Handles<Haply_Inverse3*> inverse3Handles{"Haply_Inverse3"};
     sim::Handles<Haply_Handle*> handleHandles{"Haply_Handle"};
-    sim::Handles<Haply_Inverse3_Ctrl*> inverse3CtrlHandles{"Haply_Inverse3_Ctrl"};
 };
 
 SIM_PLUGIN(Plugin)

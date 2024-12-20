@@ -52,3 +52,5 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sourceCode/config.h.in ${CMAKE_CURREN
 coppeliasim_add_plugin(simHaply SOURCES sourceCode/plugin.cpp)
 add_dependencies(simHaply hwapi-${HWAPI_VER})
 target_link_libraries(simHaply PRIVATE Haply.HardwareAPI)
+
+coppeliasim_add_lua(lua/models/Haply_device_customization-1.lua SUBDIR models)

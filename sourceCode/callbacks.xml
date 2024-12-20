@@ -379,4 +379,43 @@
             </param>
         </return>
     </command>
+    <command name="startControlLoop">
+        <description></description>
+        <params>
+            <param name="port" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </return>
+    </command>
+    <command name="stopControlLoop">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+        </params>
+        <return>
+        </return>
+    </command>
+    <command name="setControlLoopParams">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="kf" type="double"><description></description></param>
+            <param name="maxf" type="double"><description></description></param>
+            <param name="p" type="table" item-type="double" size="3"><description></description></param>
+            <param name="n" type="table" item-type="double" size="3"><description></description></param>
+        </params>
+        <return>
+            <param name="tip" type="table" item-type="double" size="3"><description></description></param>
+        </return>
+    </command>
+
 </plugin>

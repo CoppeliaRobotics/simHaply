@@ -30,6 +30,9 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <chrono>
+#include <thread>
+#include <atomic>
 
 #include "HardwareAPI.h"
 
@@ -49,6 +52,92 @@ struct Haply_Handle
 {
     Haply::HardwareAPI::IO::SerialStream *serial_stream;
     Haply::HardwareAPI::Devices::Handle *device;
+};
+
+struct HaplyControlLoop : public Haply_Inverse3
+{
+    void tick()
+    {
+        double norm = std::sqrt(nx * nx + ny * ny + nz * nz);
+        double unx = nx / norm;
+        double uny = ny / norm;
+        double unz = nz / norm;
+        double dx = x - px;
+        double dy = y - py;
+        double dz = z - pz;
+        double sdf = std::min(maxf, std::max(-maxf, kf * std::min(0., dx * unx + dy * uny + dz * unz)));
+        Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
+        if(!first_tick)
+        {
+            req.force[0] = -unx * sdf;
+            req.force[1] = -uny * sdf;
+            req.force[2] = -unz * sdf;
+        }
+        first_tick = false;
+        Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
+        x = resp.position[0];
+        y = resp.position[1];
+        z = resp.position[2];
+    }
+
+    void run()
+    {
+        using clock = std::chrono::steady_clock;
+        constexpr std::chrono::microseconds target_duration(1000); // 1 kHz = 1000 microseconds
+
+        auto next_tick = clock::now();
+
+        while(running.load())
+        {
+            next_tick += target_duration;
+
+            tick();
+
+            auto now = clock::now();
+#if 0
+            std::cout << std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count() << "us  x: " << x << "  y: " << y << "  z: " << z << std::endl;
+#endif
+
+            if(next_tick > now)
+            {
+                std::this_thread::sleep_until(next_tick);
+            }
+            else
+            {
+                // Optional: Handle overrun (e.g., logging or adjusting next_tick).
+            }
+        }
+    }
+
+    void start()
+    {
+        running.store(true);
+        control_thread = std::thread(&HaplyControlLoop::run, this);
+    }
+
+    void stop()
+    {
+        running.store(false);
+        if(control_thread.joinable())
+        {
+            control_thread.join();
+        }
+    }
+
+    ~HaplyControlLoop()
+    {
+        stop();
+    }
+
+    double kf{10.0};
+    double maxf{10.0};
+    double x{0}, y{0}, z{0};
+    double px{0}, py{0}, pz{0}, nx{0}, ny{0}, nz{1};
+    bool first_tick{true};
+
+private:
+    std::atomic<bool> running{false};
+    std::thread control_thread;
 };
 
 class Plugin : public sim::Plugin
@@ -122,6 +211,15 @@ public:
         auto *item = handleHandles.get(h);
         if(!item)
             throw std::runtime_error("invalid Handle handle");
+        return item;
+    }
+
+    template<>
+    HaplyControlLoop * get(const std::string &h)
+    {
+        auto *item = controlLoopHandles.get(h);
+        if(!item)
+            throw std::runtime_error("invalid HaplyControlLoop handle");
         return item;
     }
 
@@ -329,9 +427,49 @@ public:
         out->q.push_back(resp.q.w);
     }
 
+    void startControlLoop(startControlLoop_in *in, startControlLoop_out *out)
+    {
+        auto *item = new HaplyControlLoop;
+        item->serial_stream = new Haply::HardwareAPI::IO::SerialStream(in->port.c_str());
+        auto *dev = item->device = new Haply::HardwareAPI::Devices::Inverse3(item->serial_stream);
+        out->handle = controlLoopHandles.add(item, in->_.scriptID);
+
+        Haply::HardwareAPI::Devices::Inverse3::DeviceInfoResponse resp = dev->DeviceWakeup();
+
+        item->start();
+    }
+
+    void stopControlLoop(stopControlLoop_in *in, stopControlLoop_out *out)
+    {
+        auto *item = get<HaplyControlLoop>(in->handle);
+
+        item->stop();
+
+        delete item->device;
+        delete item->serial_stream;
+        delete controlLoopHandles.remove(item);
+    }
+
+    void setControlLoopParams(setControlLoopParams_in *in, setControlLoopParams_out *out)
+    {
+        auto *item = get<HaplyControlLoop>(in->handle);
+        item->kf = in->kf;
+        item->maxf = in->maxf;
+        item->px = in->p[0];
+        item->py = in->p[1];
+        item->pz = in->p[2];
+        item->nx = in->n[0];
+        item->ny = in->n[1];
+        item->nz = in->n[2];
+        out->tip.push_back(item->x);
+        out->tip.push_back(item->y);
+        out->tip.push_back(item->z);
+    }
+
 private:
     sim::Handles<Haply_Inverse3*> inverse3Handles{"Haply_Inverse3"};
     sim::Handles<Haply_Handle*> handleHandles{"Haply_Handle"};
+    sim::Handles<HaplyControlLoop*> controlLoopHandles{"HaplyControlLoop"};
 };
 
 SIM_PLUGIN(Plugin)

@@ -13,6 +13,7 @@ int main()
 {
     string portInv3;
     string portHandle;
+    constexpr double targetHz = 1000;
 
 #if 1
     portInv3 = "/dev/cu.usbmodem163718101";
@@ -39,8 +40,15 @@ int main()
     devHandle.SendDeviceWakeup();
     devHandle.RequestStatus();
 
+    using clock = std::chrono::steady_clock;
+    constexpr std::chrono::microseconds target_duration(long(1000000. / targetHz));
+    auto next_tick = clock::now();
+
     while(true)
     {
+        next_tick += target_duration;
+        auto now = clock::now();
+
         {
             Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
             req.force[0] = 0.0;
@@ -54,6 +62,9 @@ int main()
             cout << " btns=" << int(resp.buttons);
         }
         cout << endl;
+
+        if(next_tick > now)
+            std::this_thread::sleep_until(next_tick);
     }
 
     return 0;

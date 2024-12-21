@@ -51,7 +51,14 @@ coppeliasim_generate_stubs(${CMAKE_CURRENT_BINARY_DIR}/generated XML_FILE ${CMAK
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sourceCode/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h ESCAPE_QUOTES)
 
-coppeliasim_add_plugin(simHaply SOURCES sourceCode/plugin.cpp)
+coppeliasim_add_plugin(simHaply
+    SOURCES
+    sourceCode/plugin.cpp
+    sourceCode/utils.cpp
+    sourceCode/haply_inverse3.cpp
+    sourceCode/haply_handle.cpp
+    sourceCode/control_loop.cpp
+)
 add_dependencies(simHaply hwapi-${HWAPI_VER})
 target_link_libraries(simHaply PRIVATE Haply.HardwareAPI)
 

@@ -36,16 +36,6 @@
         <return>
         </return>
     </command>
-    <command name="setInverse3Free">
-        <description></description>
-        <params>
-            <param name="handle" type="string">
-                <description></description>
-            </param>
-        </params>
-        <return>
-        </return>
-    </command>
     <command name="setInverse3TargetPosition">
         <description></description>
         <params>
@@ -88,7 +78,20 @@
         <return>
         </return>
     </command>
-    <command name="setInverse3ConstraintForce">
+    <command name="setInverse3Attractor">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="p" type="table" item-type="double" size="3">
+                <description></description>
+            </param>
+        </params>
+        <return>
+        </return>
+    </command>
+    <command name="setInverse3ForceParams">
         <description></description>
         <params>
             <param name="handle" type="string">
@@ -131,10 +134,10 @@
         </return>
     </command>
     <enum name="simhaply_mode" item-prefix="mode_" base="67061">
-        <item name="free"></item>
         <item name="position_ctrl"></item>
         <item name="force_ctrl"></item>
         <item name="constraint"></item>
+        <item name="attractor"></item>
     </enum>
     <command name="detectHandles">
         <description></description>

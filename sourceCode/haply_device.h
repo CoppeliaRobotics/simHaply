@@ -38,10 +38,10 @@
 template<typename T, int initMode>
 struct Haply_Device
 {
-    Haply_Device(const std::string &port)
-        : port(port)
+    Haply_Device(const std::string &devType, const std::string &port)
+        : devType(devType), port(port)
     {
-        std::cout << "Haply_Device[" << port << "]: opening" << std::endl;
+        std::cout << "Haply_" << devType << "[" << port << "]: opening" << std::endl;
 
         serial_stream = new Haply::HardwareAPI::IO::SerialStream(port.c_str());
         device = new T(serial_stream);
@@ -61,10 +61,11 @@ struct Haply_Device
         delete device;
         delete serial_stream;
 
-        std::cout << "Haply_Device[" << port << "]: closed" << std::endl;
+        std::cout << "Haply_" << devType << "[" << port << "]: closed" << std::endl;
     }
 
 protected:
+    std::string devType;
     std::string port;
     Haply::HardwareAPI::IO::SerialStream *serial_stream;
     T *device;

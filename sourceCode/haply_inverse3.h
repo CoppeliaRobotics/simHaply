@@ -31,6 +31,7 @@
 
 #include <array>
 #include <mutex>
+#include <optional>
 #include <string>
 
 #include "stubs.h"
@@ -43,18 +44,18 @@ struct Haply_Inverse3 : public Haply_Device<Haply::HardwareAPI::Devices::Inverse
 {
     Haply_Inverse3(const std::string &port);
     void tick();
-    void setFree();
     void setTargetPosition(const std::array<double, 3> &target_position);
     void setTargetForce(const std::array<double, 3> &target_force);
     void setConstraint(const std::array<double, 3> &p, const std::array<double, 3> &n);
-    void setConstraintForce(double kf, double maxf);
+    void setAttractor(const std::array<double, 3> &p);
+    void setForceParams(double kf, double maxf);
     std::array<double, 3> getPosition();
     std::array<double, 3> getVelocity();
 
 private:
-    simhaply_mode mode{simhaply_mode_free};
-    std::array<double, 3> target_position;
-    std::array<double, 3> target_force;
+    simhaply_mode mode{simhaply_mode_force_ctrl};
+    std::optional<std::array<double, 3>> target_position;
+    std::optional<std::array<double, 3>> target_force;
     std::array<double, 3> p;
     std::array<double, 3> n;
     std::array<double, 3> position;

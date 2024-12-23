@@ -30,7 +30,7 @@
 #include "haply_handle.h"
 
 Haply_Handle::Haply_Handle(const std::string &port)
-    : Haply_Device<Haply::HardwareAPI::Devices::Handle, 2>(port),
+    : Haply_Device<Haply::HardwareAPI::Devices::Handle, 2>("Handle", port),
       ControlLoop("Handle")
 {
 }

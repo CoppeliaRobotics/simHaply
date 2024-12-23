@@ -30,9 +30,20 @@
 #include "haply_inverse3.h"
 
 Haply_Inverse3::Haply_Inverse3(const std::string &port)
-    : Haply_Device<Haply::HardwareAPI::Devices::Inverse3, 1>(port),
+    : Haply_Device<Haply::HardwareAPI::Devices::Inverse3, 1>("Inverse3", port),
       ControlLoop("Inverse3")
 {
+}
+
+template<typename T>
+static void readPositionAndVelocity(const T &in, std::array<double, 3> &position, std::array<double, 3> &velocity)
+{
+    position[0] = in.position[0];
+    position[1] = in.position[1];
+    position[2] = in.position[2];
+    velocity[0] = in.velocity[0];
+    velocity[1] = in.velocity[1];
+    velocity[2] = in.velocity[2];
 }
 
 void Haply_Inverse3::tick()
@@ -44,29 +55,23 @@ void Haply_Inverse3::tick()
     }
     switch(m)
     {
-        case simhaply_mode_free:
-        {
-            Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
-            {
-                std::lock_guard<std::mutex> lock(mtx);
-                req.force[0] = 0;
-                req.force[1] = 0;
-                req.force[2] = 0;
-            }
-            Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
-            {
-                std::lock_guard<std::mutex> lock(mtx);
-                position[0] = resp.position[0];
-                position[1] = resp.position[1];
-                position[2] = resp.position[2];
-                velocity[0] = resp.velocity[0];
-                velocity[1] = resp.velocity[1];
-                velocity[2] = resp.velocity[2];
-            }
-        }
-        break;
         case simhaply_mode_position_ctrl:
         {
+            Haply::HardwareAPI::Devices::Inverse3::EndEffectorPositionRequest req;
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                if(!target_position) return;
+                const auto &p = target_position.value();
+                req.position[0] = p[0];
+                req.position[1] = p[1];
+                req.position[2] = p[2];
+                target_position.reset();
+            }
+            Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorPosition(req);
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                readPositionAndVelocity(resp, position, velocity);
+            }
         }
         break;
         case simhaply_mode_force_ctrl:
@@ -74,25 +79,17 @@ void Haply_Inverse3::tick()
             Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
             {
                 std::lock_guard<std::mutex> lock(mtx);
-#if 1
-                req.force[0] = 0;
-                req.force[1] = 0;
-                req.force[2] = 0;
-#else
-                req.force[0] = target_force[0];
-                req.force[1] = target_force[1];
-                req.force[2] = target_force[2];
-#endif
+                if(!target_force) return;
+                const auto &f = target_force.value();
+                req.force[0] = f[0];
+                req.force[1] = f[1];
+                req.force[2] = f[2];
+                target_force.reset();
             }
             Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
             {
                 std::lock_guard<std::mutex> lock(mtx);
-                position[0] = resp.position[0];
-                position[1] = resp.position[1];
-                position[2] = resp.position[2];
-                velocity[0] = resp.velocity[0];
-                velocity[1] = resp.velocity[1];
-                velocity[2] = resp.velocity[2];
+                readPositionAndVelocity(resp, position, velocity);
             }
         }
         break;
@@ -119,22 +116,38 @@ void Haply_Inverse3::tick()
             Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
             {
                 std::lock_guard<std::mutex> lock(mtx);
-                position[0] = resp.position[0];
-                position[1] = resp.position[1];
-                position[2] = resp.position[2];
-                velocity[0] = resp.velocity[0];
-                velocity[1] = resp.velocity[1];
-                velocity[2] = resp.velocity[2];
+                readPositionAndVelocity(resp, position, velocity);
+            }
+        }
+        break;
+        case simhaply_mode_attractor:
+        {
+            Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest req;
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                double dx = position[0] - p[0];
+                double dy = position[1] - p[1];
+                double dz = position[2] - p[2];
+                double dnorm = std::sqrt(dx * dx + dy * dy + dz * dz);
+                dx /= dnorm;
+                dy /= dnorm;
+                dz /= dnorm;
+                dnorm = std::min(maxf, std::max(-maxf, -kf * dnorm));
+                if(tick_num > 0)
+                {
+                    req.force[0] = dnorm * dx;
+                    req.force[1] = dnorm * dy;
+                    req.force[2] = dnorm * dz;
+                }
+            }
+            Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse resp = device->EndEffectorForce(req, true);
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                readPositionAndVelocity(resp, position, velocity);
             }
         }
         break;
     }
-}
-
-void Haply_Inverse3::setFree()
-{
-    std::lock_guard<std::mutex> lock(mtx);
-    this->mode = simhaply_mode_free;
 }
 
 void Haply_Inverse3::setTargetPosition(const std::array<double, 3> &target_position)
@@ -159,10 +172,17 @@ void Haply_Inverse3::setConstraint(const std::array<double, 3> &p, const std::ar
     this->n = n;
 }
 
-void Haply_Inverse3::setConstraintForce(double kf, double maxf)
+void Haply_Inverse3::setAttractor(const std::array<double, 3> &p)
 {
     std::lock_guard<std::mutex> lock(mtx);
-    this->mode = simhaply_mode_constraint;
+    this->mode = simhaply_mode_attractor;
+    this->p = p;
+    this->n = {0, 0, 1};
+}
+
+void Haply_Inverse3::setForceParams(double kf, double maxf)
+{
+    std::lock_guard<std::mutex> lock(mtx);
     this->kf = kf;
     this->maxf = maxf;
 }

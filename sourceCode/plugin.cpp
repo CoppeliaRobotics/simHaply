@@ -104,12 +104,6 @@ public:
         }
     }
 
-    void setInverse3Free(setInverse3Free_in *in, setInverse3Free_out *out)
-    {
-        auto *item = get<Haply_Inverse3>(in->handle);
-        item->setFree();
-    }
-
     void setInverse3TargetPosition(setInverse3TargetPosition_in *in, setInverse3TargetPosition_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
@@ -128,10 +122,16 @@ public:
         item->setConstraint(toArray<double, 3>(in->p), toArray<double, 3>(in->n));
     }
 
-    void setInverse3ConstraintForce(setInverse3ConstraintForce_in *in, setInverse3ConstraintForce_out *out)
+    void setInverse3Attractor(setInverse3Attractor_in *in, setInverse3Attractor_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        item->setConstraintForce(in->kf, in->maxf);
+        item->setAttractor(toArray<double, 3>(in->p));
+    }
+
+    void setInverse3ForceParams(setInverse3ForceParams_in *in, setInverse3ForceParams_out *out)
+    {
+        auto *item = get<Haply_Inverse3>(in->handle);
+        item->setForceParams(in->kf, in->maxf);
     }
 
     void getInverse3Position(getInverse3Position_in *in, getInverse3Position_out *out)

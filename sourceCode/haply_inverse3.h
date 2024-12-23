@@ -49,11 +49,13 @@ struct Haply_Inverse3 : public Haply_Device<Haply::HardwareAPI::Devices::Inverse
     void setConstraint(const std::array<double, 3> &p, const std::array<double, 3> &n);
     void setAttractor(const std::array<double, 3> &p);
     void setForceParams(double kf, double maxf);
+    void setGravityCompensation(bool enabled, double scale_factor);
     std::array<double, 3> getPosition();
     std::array<double, 3> getVelocity();
 
 private:
     simhaply_mode mode{simhaply_mode_force_ctrl};
+    std::optional<std::pair<bool, double>> set_gravity_compensation;
     std::optional<std::array<double, 3>> target_position;
     std::optional<std::array<double, 3>> target_force;
     std::array<double, 3> p;

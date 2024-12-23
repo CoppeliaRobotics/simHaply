@@ -36,6 +36,22 @@
         <return>
         </return>
     </command>
+    <command name="setInverse3GravityCompensation">
+        <description></description>
+        <params>
+            <param name="handle" type="string">
+                <description></description>
+            </param>
+            <param name="enabled" type="bool" default="true">
+                <description></description>
+            </param>
+            <param name="scale_factor" type="double" default="0.75">
+                <description></description>
+            </param>
+        </params>
+        <return>
+        </return>
+    </command>
     <command name="setInverse3TargetPosition">
         <description></description>
         <params>

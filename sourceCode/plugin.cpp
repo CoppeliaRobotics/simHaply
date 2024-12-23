@@ -93,6 +93,12 @@ public:
         delete inverse3Handles.remove(item);
     }
 
+    void setInverse3GravityCompensation(setInverse3GravityCompensation_in *in, setInverse3GravityCompensation_out *out)
+    {
+        auto *item = get<Haply_Inverse3>(in->handle);
+        item->setGravityCompensation(in->enabled, in->scale_factor);
+    }
+
     void cleanupInverse3Handles(int scriptHandle)
     {
         for(auto dev : inverse3Handles.find(scriptHandle))

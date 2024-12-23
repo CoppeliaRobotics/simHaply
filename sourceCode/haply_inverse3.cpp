@@ -51,7 +51,17 @@ void Haply_Inverse3::tick()
     simhaply_mode m;
     {
         std::lock_guard<std::mutex> lock(mtx);
+
         m = mode;
+
+        if(set_gravity_compensation.has_value())
+        {
+            Haply::HardwareAPI::Devices::Inverse3::GravityCompensationPayload req;
+            const auto &gc = set_gravity_compensation.value();
+            req.enabled = gc.first;
+            req.gravity_scale_factor = gc.second;
+            Haply::HardwareAPI::Devices::Inverse3::GravityCompensationPayload resp = device->SetGravityCompensation(req);
+        }
     }
     switch(m)
     {
@@ -185,6 +195,12 @@ void Haply_Inverse3::setForceParams(double kf, double maxf)
     std::lock_guard<std::mutex> lock(mtx);
     this->kf = kf;
     this->maxf = maxf;
+}
+
+void Haply_Inverse3::setGravityCompensation(bool enabled, double scale_factor)
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    set_gravity_compensation = std::make_pair(enabled, scale_factor);
 }
 
 std::array<double, 3> Haply_Inverse3::getPosition()

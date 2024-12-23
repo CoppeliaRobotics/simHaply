@@ -17,6 +17,7 @@ list(APPEND CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules
     ${COPPELIASIM_INCLUDE_DIR}/cmake)
 find_package(CoppeliaSim 4.5.1.7 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 include(ExternalProject)
 set(HWAPI_VER 0.1.12-pre)
@@ -61,6 +62,7 @@ coppeliasim_add_plugin(simHaply
 )
 add_dependencies(simHaply hwapi-${HWAPI_VER})
 target_link_libraries(simHaply PRIVATE Haply.HardwareAPI)
+target_link_libraries(simHaply PRIVATE Eigen3::Eigen)
 
 coppeliasim_add_lua(lua/models/Haply_device_customization-1.lua SUBDIR models)
 

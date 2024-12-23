@@ -34,6 +34,8 @@
 #include <optional>
 #include <string>
 
+#include <Eigen/Dense>
+
 #include "stubs.h"
 #include "haply_device.h"
 #include "control_loop.h"
@@ -55,13 +57,12 @@ struct Haply_Inverse3 : public Haply_Device<Haply::HardwareAPI::Devices::Inverse
 
 private:
     simhaply_mode mode{simhaply_mode_force_ctrl};
-    std::optional<std::pair<bool, double>> set_gravity_compensation;
-    std::optional<std::array<double, 3>> target_position;
-    std::optional<std::array<double, 3>> target_force;
-    std::array<double, 3> p;
-    std::array<double, 3> n;
-    std::array<double, 3> position;
-    std::array<double, 3> velocity;
+    std::optional<Haply::HardwareAPI::Devices::Inverse3::GravityCompensationPayload> gravity_compensation;
+    std::optional<Haply::HardwareAPI::Devices::Inverse3::EndEffectorPositionRequest> end_effector_position;
+    std::optional<Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest> end_effector_force;
+    Eigen::Vector3d p;
+    Eigen::Vector3d n;
+    Haply::HardwareAPI::Devices::Inverse3::EndEffectorStateResponse end_effector_state;
     double kf{10.0};
     double maxf{10.0};
 };

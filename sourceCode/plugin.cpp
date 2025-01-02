@@ -110,16 +110,16 @@ public:
         }
     }
 
-    void setInverse3TargetPosition(setInverse3TargetPosition_in *in, setInverse3TargetPosition_out *out)
+    void setInverse3Position(setInverse3Position_in *in, setInverse3Position_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        item->setTargetPosition(toArray<double, 3>(in->target_position));
+        item->setPosition(toArray<double, 3>(in->position));
     }
 
-    void setInverse3TargetForce(setInverse3TargetForce_in *in, setInverse3TargetForce_out *out)
+    void setInverse3Force(setInverse3Force_in *in, setInverse3Force_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        item->setTargetForce(toArray<double, 3>(in->target_force));
+        item->setForce(toArray<double, 3>(in->force));
     }
 
     void setInverse3Constraint(setInverse3Constraint_in *in, setInverse3Constraint_out *out)

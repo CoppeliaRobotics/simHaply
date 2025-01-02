@@ -46,8 +46,8 @@ struct Haply_Inverse3 : public Haply_Device<Haply::HardwareAPI::Devices::Inverse
 {
     Haply_Inverse3(const std::string &port);
     void tick();
-    void setTargetPosition(const std::array<double, 3> &target_position);
-    void setTargetForce(const std::array<double, 3> &target_force);
+    void setPosition(const std::array<double, 3> &position);
+    void setForce(const std::array<double, 3> &force);
     void setConstraint(const std::array<double, 3> &p, const std::array<double, 3> &n);
     void setAttractor(const std::array<double, 3> &p);
     void setForceParams(double kf, double maxf);

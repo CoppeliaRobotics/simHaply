@@ -93,25 +93,25 @@ void Haply_Inverse3::tick()
     }
 }
 
-void Haply_Inverse3::setTargetPosition(const std::array<double, 3> &target_position)
+void Haply_Inverse3::setPosition(const std::array<double, 3> &position)
 {
     std::lock_guard<std::mutex> lock(mtx);
     mode = simhaply_mode_position_ctrl;
     end_effector_position.emplace();
-    end_effector_position->position[0] = target_position[0];
-    end_effector_position->position[1] = target_position[1];
-    end_effector_position->position[2] = target_position[2];
+    end_effector_position->position[0] = position[0];
+    end_effector_position->position[1] = position[1];
+    end_effector_position->position[2] = position[2];
     end_effector_force.reset();
 }
 
-void Haply_Inverse3::setTargetForce(const std::array<double, 3> &target_force)
+void Haply_Inverse3::setForce(const std::array<double, 3> &force)
 {
     std::lock_guard<std::mutex> lock(mtx);
     mode = simhaply_mode_force_ctrl;
     end_effector_force.emplace();
-    end_effector_force->force[0] = target_force[0];
-    end_effector_force->force[1] = target_force[1];
-    end_effector_force->force[2] = target_force[2];
+    end_effector_force->force[0] = force[0];
+    end_effector_force->force[1] = force[1];
+    end_effector_force->force[2] = force[2];
     end_effector_position.reset();
 }
 

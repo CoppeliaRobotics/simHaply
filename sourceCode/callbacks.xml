@@ -52,26 +52,26 @@
         <return>
         </return>
     </command>
-    <command name="setInverse3TargetPosition">
+    <command name="setInverse3Position">
         <description></description>
         <params>
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="target_position" type="table" item-type="double" size="3">
+            <param name="position" type="table" item-type="double" size="3">
                 <description></description>
             </param>
         </params>
         <return>
         </return>
     </command>
-    <command name="setInverse3TargetForce">
+    <command name="setInverse3Force">
         <description></description>
         <params>
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="target_force" type="table" item-type="double" size="3">
+            <param name="force" type="table" item-type="double" size="3">
                 <description></description>
             </param>
         </params>

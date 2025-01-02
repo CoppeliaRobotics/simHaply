@@ -55,7 +55,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sourceCode/config.h.in ${CMAKE_CURREN
 coppeliasim_add_plugin(simHaply
     SOURCES
     sourceCode/plugin.cpp
-    sourceCode/utils.cpp
     sourceCode/haply_inverse3.cpp
     sourceCode/haply_handle.cpp
     sourceCode/control_loop.cpp

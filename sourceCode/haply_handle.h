@@ -29,9 +29,10 @@
 
 #pragma once
 
-#include <array>
 #include <mutex>
 #include <string>
+
+#include <Eigen/Dense>
 
 #include "haply_device.h"
 #include "control_loop.h"
@@ -42,12 +43,12 @@ struct Haply_Handle : public Haply_Device<Haply::HardwareAPI::Devices::Handle, 2
 {
     Haply_Handle(const std::string &port);
     void tick();
-    std::array<double, 4> getQuaternion();
+    Eigen::Quaterniond getQuaternion();
     int getButtons();
     float getBatteryLevel();
 
 private:
-    std::array<double, 4> quaternion;
+    Eigen::Quaterniond quaternion;
     int buttons;
     float battery_level;
 };

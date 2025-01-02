@@ -58,7 +58,7 @@
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="position" type="table" item-type="double" size="3">
+            <param name="position" type="vector3d">
                 <description></description>
             </param>
         </params>
@@ -71,7 +71,7 @@
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="force" type="table" item-type="double" size="3">
+            <param name="force" type="vector3d">
                 <description></description>
             </param>
         </params>
@@ -84,10 +84,10 @@
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="p" type="table" item-type="double" size="3">
+            <param name="p" type="vector3d">
                 <description></description>
             </param>
-            <param name="n" type="table" item-type="double" size="3">
+            <param name="n" type="vector3d">
                 <description></description>
             </param>
         </params>
@@ -100,7 +100,7 @@
             <param name="handle" type="string">
                 <description></description>
             </param>
-            <param name="p" type="table" item-type="double" size="3">
+            <param name="p" type="vector3d">
                 <description></description>
             </param>
         </params>
@@ -131,7 +131,7 @@
             </param>
         </params>
         <return>
-            <param name="position" type="table" item-type="double" size="3">
+            <param name="position" type="vector3d">
                 <description></description>
             </param>
         </return>
@@ -144,7 +144,7 @@
             </param>
         </params>
         <return>
-            <param name="velocity" type="table" item-type="double" size="3">
+            <param name="velocity" type="vector3d">
                 <description></description>
             </param>
         </return>
@@ -216,7 +216,7 @@
             </param>
         </params>
         <return>
-            <param name="quaternion" type="table" item-type="double" size="4">
+            <param name="quaternion" type="quaternion">
                 <description></description>
             </param>
         </return>

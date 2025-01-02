@@ -46,14 +46,18 @@ void Haply_Handle::tick()
 
     {
         std::lock_guard<std::mutex> lock(mtx);
-        for(int i = 0; i < 4; i++)
-            quaternion[i] = resp.quaternion[i];
+        quaternion = Eigen::Quaterniond {
+            resp.quaternion[0],
+            resp.quaternion[1],
+            resp.quaternion[2],
+            resp.quaternion[3]
+        };
         buttons = resp.buttons;
         battery_level = resp.battery_level;
     }
 }
 
-std::array<double, 4> Haply_Handle::getQuaternion()
+Eigen::Quaterniond Haply_Handle::getQuaternion()
 {
     std::lock_guard<std::mutex> lock(mtx);
     return quaternion;

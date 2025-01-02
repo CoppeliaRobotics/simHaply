@@ -29,7 +29,6 @@
 
 #pragma once
 
-#include <array>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -46,14 +45,14 @@ struct Haply_Inverse3 : public Haply_Device<Haply::HardwareAPI::Devices::Inverse
 {
     Haply_Inverse3(const std::string &port);
     void tick();
-    void setPosition(const std::array<double, 3> &position);
-    void setForce(const std::array<double, 3> &force);
-    void setConstraint(const std::array<double, 3> &p, const std::array<double, 3> &n);
-    void setAttractor(const std::array<double, 3> &p);
+    void setPosition(const Eigen::Vector3d &position);
+    void setForce(const Eigen::Vector3d &force);
+    void setConstraint(const Eigen::Vector3d &p, const Eigen::Vector3d &n);
+    void setAttractor(const Eigen::Vector3d &p);
     void setForceParams(double kf, double maxf);
     void setGravityCompensation(bool enabled, double scale_factor);
-    std::array<double, 3> getPosition();
-    std::array<double, 3> getVelocity();
+    Eigen::Vector3d getPosition();
+    Eigen::Vector3d getVelocity();
 
 private:
     simhaply_mode mode{simhaply_mode_force_ctrl};

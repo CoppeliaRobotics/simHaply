@@ -36,13 +36,15 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+
 #include <simPlusPlus/Plugin.h>
 #include <simPlusPlus/Handles.h>
 
 #include "config.h"
 #include "plugin.h"
 #include "stubs.h"
-#include "utils.h"
 #include "haply_inverse3.h"
 #include "haply_handle.h"
 
@@ -113,25 +115,25 @@ public:
     void setInverse3Position(setInverse3Position_in *in, setInverse3Position_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        item->setPosition(toArray<double, 3>(in->position));
+        item->setPosition(in->position);
     }
 
     void setInverse3Force(setInverse3Force_in *in, setInverse3Force_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        item->setForce(toArray<double, 3>(in->force));
+        item->setForce(in->force);
     }
 
     void setInverse3Constraint(setInverse3Constraint_in *in, setInverse3Constraint_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        item->setConstraint(toArray<double, 3>(in->p), toArray<double, 3>(in->n));
+        item->setConstraint(in->p, in->n);
     }
 
     void setInverse3Attractor(setInverse3Attractor_in *in, setInverse3Attractor_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        item->setAttractor(toArray<double, 3>(in->p));
+        item->setAttractor(in->p);
     }
 
     void setInverse3ForceParams(setInverse3ForceParams_in *in, setInverse3ForceParams_out *out)
@@ -143,13 +145,13 @@ public:
     void getInverse3Position(getInverse3Position_in *in, getInverse3Position_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        out->position = toVector<double, 3>(item->getPosition());
+        out->position = item->getPosition();
     }
 
     void getInverse3Velocity(getInverse3Velocity_in *in, getInverse3Velocity_out *out)
     {
         auto *item = get<Haply_Inverse3>(in->handle);
-        out->velocity = toVector<double, 3>(item->getVelocity());
+        out->velocity = item->getVelocity();
     }
 
     template<>
@@ -201,7 +203,7 @@ public:
     void getHandleQuaternion(getHandleQuaternion_in *in, getHandleQuaternion_out *out)
     {
         auto *item = get<Haply_Handle>(in->handle);
-        out->quaternion = toVector<double, 4>(item->getQuaternion());
+        out->quaternion = item->getQuaternion();
     }
 
     void getHandleButtons(getHandleButtons_in *in, getHandleButtons_out *out)

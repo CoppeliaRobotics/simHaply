@@ -93,43 +93,42 @@ void Haply_Inverse3::tick()
     }
 }
 
-void Haply_Inverse3::setPosition(const std::array<double, 3> &position)
+void Haply_Inverse3::setPosition(const Eigen::Vector3d &position)
 {
     std::lock_guard<std::mutex> lock(mtx);
     mode = simhaply_mode_position_ctrl;
     end_effector_position.emplace();
-    end_effector_position->position[0] = position[0];
-    end_effector_position->position[1] = position[1];
-    end_effector_position->position[2] = position[2];
+    end_effector_position->position[0] = position(0);
+    end_effector_position->position[1] = position(1);
+    end_effector_position->position[2] = position(2);
     end_effector_force.reset();
 }
 
-void Haply_Inverse3::setForce(const std::array<double, 3> &force)
+void Haply_Inverse3::setForce(const Eigen::Vector3d &force)
 {
     std::lock_guard<std::mutex> lock(mtx);
     mode = simhaply_mode_force_ctrl;
     end_effector_force.emplace();
-    end_effector_force->force[0] = force[0];
-    end_effector_force->force[1] = force[1];
-    end_effector_force->force[2] = force[2];
+    end_effector_force->force[0] = force(0);
+    end_effector_force->force[1] = force(1);
+    end_effector_force->force[2] = force(2);
     end_effector_position.reset();
 }
 
-void Haply_Inverse3::setConstraint(const std::array<double, 3> &p, const std::array<double, 3> &n)
+void Haply_Inverse3::setConstraint(const Eigen::Vector3d &p, const Eigen::Vector3d &n)
 {
     std::lock_guard<std::mutex> lock(mtx);
     mode = simhaply_mode_constraint;
-    this->p << p[0], p[1], p[2];
-    this->n << n[0], n[1], n[2];
-    this->n.normalize();
+    this->p = p;
+    this->n = n.normalized();
 }
 
-void Haply_Inverse3::setAttractor(const std::array<double, 3> &p)
+void Haply_Inverse3::setAttractor(const Eigen::Vector3d &p)
 {
     std::lock_guard<std::mutex> lock(mtx);
     mode = simhaply_mode_attractor;
-    this->p << p[0], p[1], p[2];
-    this->n << 0.0, 0.0, 1.0;
+    this->p = p;
+    this->n = {0, 0, 1};
 }
 
 void Haply_Inverse3::setForceParams(double kf, double maxf)
@@ -147,20 +146,20 @@ void Haply_Inverse3::setGravityCompensation(bool enabled, double scale_factor)
     gravity_compensation->gravity_scale_factor = scale_factor;
 }
 
-std::array<double, 3> Haply_Inverse3::getPosition()
+Eigen::Vector3d Haply_Inverse3::getPosition()
 {
     std::lock_guard<std::mutex> lock(mtx);
-    return std::array<double, 3> {
+    return {
         end_effector_state.position[0],
         end_effector_state.position[1],
         end_effector_state.position[2]
     };
 }
 
-std::array<double, 3> Haply_Inverse3::getVelocity()
+Eigen::Vector3d Haply_Inverse3::getVelocity()
 {
     std::lock_guard<std::mutex> lock(mtx);
-    return std::array<double, 3> {
+    return {
         end_effector_state.velocity[0],
         end_effector_state.velocity[1],
         end_effector_state.velocity[2]

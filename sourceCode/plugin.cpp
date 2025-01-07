@@ -28,16 +28,6 @@
 // -------------------------------------------------------------------
 
 #include <string>
-#include <vector>
-#include <memory>
-#include <chrono>
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
-
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
 
 #include <simPlusPlus/Plugin.h>
 #include <simPlusPlus/Handles.h>

@@ -4,148 +4,148 @@
 <plugin name="simHaply" author="federico.ferri.it@gmail.com">
     <description></description>
     <command name="detectInverse3s">
-        <description></description>
+        <description>Detect Inverse3 devices (calls Haply::HardwareAPI::Devices::DeviceDetection::DetectInverse3s)</description>
         <params>
         </params>
         <return>
             <param name="ports" type="table" item-type="string">
-                <description></description>
+                <description>list of detected ports</description>
             </param>
         </return>
     </command>
     <command name="openInverse3">
-        <description></description>
+        <description>Open an Inverse3 device given its port, and start a 1kHz control loop in a dedicated thread</description>
         <params>
             <param name="port" type="string">
-                <description></description>
+                <description>the port</description>
             </param>
         </params>
         <return>
             <param name="handle" type="string">
-                <description></description>
+                <description>a handle to the device, that has to be closed with <command-ref name="closeInverse3" /></description>
             </param>
         </return>
     </command>
     <command name="closeInverse3">
-        <description></description>
+        <description>Close an Inverse3 device handle</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
         </params>
         <return>
         </return>
     </command>
     <command name="setInverse3GravityCompensation">
-        <description></description>
+        <description>Calls Haply::HardwareAPI::Devices::Inverse3::SetGravityCompensation()</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
             <param name="enabled" type="bool" default="true">
-                <description></description>
+                <description>enable status</description>
             </param>
             <param name="scale_factor" type="double" default="0.75">
-                <description></description>
+                <description>scale factor</description>
             </param>
         </params>
         <return>
         </return>
     </command>
     <command name="setInverse3Position">
-        <description></description>
+        <description>Calls Haply::HardwareAPI::Devices::Inverse3::EndEffectorPosition()</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
             <param name="position" type="vector3d">
-                <description></description>
+                <description>position parameter</description>
             </param>
         </params>
         <return>
         </return>
     </command>
     <command name="setInverse3Force">
-        <description></description>
+        <description>Calls Haply::HardwareAPI::Devices::Inverse3::EndEffectorForce()</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
             <param name="force" type="vector3d">
-                <description></description>
+                <description>force parameter</description>
             </param>
         </params>
         <return>
         </return>
     </command>
     <command name="setInverse3Constraint">
-        <description></description>
+        <description>Set the device control loop in a mode to enforce a half-plane constraint</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
             <param name="p" type="vector3d">
-                <description></description>
+                <description>point on the plane</description>
             </param>
             <param name="n" type="vector3d">
-                <description></description>
+                <description>normal vector orthogonal to the plane</description>
             </param>
         </params>
         <return>
         </return>
     </command>
     <command name="setInverse3Attractor">
-        <description></description>
+        <description>Set the device control loop in a mode to attract the end-effector to a specific point (set force with <command-ref name="setInverse3ForceParams" />)</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
             <param name="p" type="vector3d">
-                <description></description>
+                <description>attractor position</description>
             </param>
         </params>
         <return>
         </return>
     </command>
     <command name="setInverse3ForceParams">
-        <description></description>
+        <description>Set force params that affect the behavior of the control loop</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
             <param name="kf" type="double">
-                <description></description>
+                <description>proportional force constant</description>
             </param>
             <param name="maxf" type="double">
-                <description></description>
+                <description>maximum force to apply</description>
             </param>
         </params>
         <return>
         </return>
     </command>
     <command name="getInverse3Position">
-        <description></description>
+        <description>Retrieve the last position that has been read by the control loop (note: value is only read if there is an active constraint, an attractor, or end-effector position/force has been explicitly set)</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
         </params>
         <return>
             <param name="position" type="vector3d">
-                <description></description>
+                <description>position of the end-effector</description>
             </param>
         </return>
     </command>
     <command name="getInverse3Velocity">
-        <description></description>
+        <description>Retrieve the last velocity that has been read by the control loop (note: value is only read if there is an active constraint, an attractor, or end-effector position/force has been explicitly set)</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the Inverse3 device</description>
             </param>
         </params>
         <return>
             <param name="velocity" type="vector3d">
-                <description></description>
+                <description>velocity of the end-effector</description>
             </param>
         </return>
     </command>
@@ -156,94 +156,94 @@
         <item name="attractor"></item>
     </enum>
     <command name="detectHandles">
-        <description></description>
+        <description>Detect handle devices (calls Haply::HardwareAPI::Devices::DeviceDetection::DetectHandles)</description>
         <params>
         </params>
         <return>
             <param name="ports" type="table" item-type="string">
-                <description></description>
+                <description>list of detected ports</description>
             </param>
         </return>
     </command>
     <command name="detectWiredHandles">
-        <description></description>
+        <description>Detect handle devices (calls Haply::HardwareAPI::Devices::DeviceDetection::DetectWiredHandles)</description>
         <params>
         </params>
         <return>
             <param name="ports" type="table" item-type="string">
-                <description></description>
+                <description>list of detected ports</description>
             </param>
         </return>
     </command>
     <command name="detectWirelessHandles">
-        <description></description>
+        <description>Detect handle devices (calls Haply::HardwareAPI::Devices::DeviceDetection::DetectWirelessHandles)</description>
         <params>
         </params>
         <return>
             <param name="ports" type="table" item-type="string">
-                <description></description>
+                <description>list of detected ports</description>
             </param>
         </return>
     </command>
     <command name="openHandle">
-        <description></description>
+        <description>Open an handle device (VerseGrip, etc...) given its port, and start a 1kHz control loop in a dedicated thread (the device orientation, buttons state, battery, etc. are read at 1kHz too)</description>
         <params>
             <param name="port" type="string">
-                <description></description>
+                <description>the port</description>
             </param>
         </params>
         <return>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the handle device</description>
             </param>
         </return>
     </command>
     <command name="closeHandle">
-        <description></description>
+        <description>Close an handle device handle</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the handle device</description>
             </param>
         </params>
         <return>
         </return>
     </command>
     <command name="getHandleQuaternion">
-        <description></description>
+        <description>Return the orientation (as unit quaternion) of the handle device</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the handle device</description>
             </param>
         </params>
         <return>
             <param name="quaternion" type="quaternion">
-                <description></description>
+                <description>the quaternion representing the orientation of the stylus</description>
             </param>
         </return>
     </command>
     <command name="getHandleButtons">
-        <description></description>
+        <description>Return the state of the buttons (bit-coded)</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the handle device</description>
             </param>
         </params>
         <return>
             <param name="buttons" type="int">
-                <description></description>
+                <description>the state of the buttons (bit-coded)</description>
             </param>
         </return>
     </command>
     <command name="getHandleBatteryLevel">
-        <description></description>
+        <description>Return the battery level of the handle device</description>
         <params>
             <param name="handle" type="string">
-                <description></description>
+                <description>handle to the handle device</description>
             </param>
         </params>
         <return>
             <param name="battery_level" type="double">
-                <description></description>
+                <description>battery level in Volts</description>
             </param>
         </return>
     </command>

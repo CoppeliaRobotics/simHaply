@@ -55,7 +55,7 @@ struct Haply_Inverse3 : public Haply_Device<Haply::HardwareAPI::Devices::Inverse
     Eigen::Vector3d getVelocity();
 
 private:
-    simhaply_mode mode{simhaply_mode_force_ctrl};
+    ctrlmode mode{simhaply_ctrlmode_force_ctrl};
     std::optional<Haply::HardwareAPI::Devices::Inverse3::GravityCompensationPayload> gravity_compensation;
     std::optional<Haply::HardwareAPI::Devices::Inverse3::EndEffectorPositionRequest> end_effector_position;
     std::optional<Haply::HardwareAPI::Devices::Inverse3::EndEffectorForceRequest> end_effector_force;

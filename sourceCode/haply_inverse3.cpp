@@ -50,7 +50,7 @@ void Haply_Inverse3::tick()
 
     switch(mode)
     {
-        case simhaply_mode_constraint:
+        case simhaply_ctrlmode_constraint:
             {
                 if(tick_num > 0)
                 {
@@ -62,7 +62,7 @@ void Haply_Inverse3::tick()
                 }
             }
             break;
-        case simhaply_mode_attractor:
+        case simhaply_ctrlmode_attractor:
             {
                 if(tick_num > 0)
                 {
@@ -96,7 +96,7 @@ void Haply_Inverse3::tick()
 void Haply_Inverse3::setPosition(const Eigen::Vector3d &position)
 {
     std::lock_guard<std::mutex> lock(mtx);
-    mode = simhaply_mode_position_ctrl;
+    mode = simhaply_ctrlmode_position_ctrl;
     end_effector_position.emplace();
     end_effector_position->position[0] = position(0);
     end_effector_position->position[1] = position(1);
@@ -107,7 +107,7 @@ void Haply_Inverse3::setPosition(const Eigen::Vector3d &position)
 void Haply_Inverse3::setForce(const Eigen::Vector3d &force)
 {
     std::lock_guard<std::mutex> lock(mtx);
-    mode = simhaply_mode_force_ctrl;
+    mode = simhaply_ctrlmode_force_ctrl;
     end_effector_force.emplace();
     end_effector_force->force[0] = force(0);
     end_effector_force->force[1] = force(1);
@@ -118,7 +118,7 @@ void Haply_Inverse3::setForce(const Eigen::Vector3d &force)
 void Haply_Inverse3::setConstraint(const Eigen::Vector3d &p, const Eigen::Vector3d &n)
 {
     std::lock_guard<std::mutex> lock(mtx);
-    mode = simhaply_mode_constraint;
+    mode = simhaply_ctrlmode_constraint;
     this->p = p;
     this->n = n.normalized();
 }
@@ -126,7 +126,7 @@ void Haply_Inverse3::setConstraint(const Eigen::Vector3d &p, const Eigen::Vector
 void Haply_Inverse3::setAttractor(const Eigen::Vector3d &p)
 {
     std::lock_guard<std::mutex> lock(mtx);
-    mode = simhaply_mode_attractor;
+    mode = simhaply_ctrlmode_attractor;
     this->p = p;
     this->n = {0, 0, 1};
 }

@@ -20,7 +20,7 @@ find_package(CoppeliaSim 4.5.1.7 REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 include(ExternalProject)
-set(HWAPI_VER 0.1.12-pre)
+set(HWAPI_VER 0.1.12)
 if(WIN32)
     set(HWAPI_URL https://cdn.haply.co/r/33857671/HardwareAPI.${HWAPI_VER}.win32.zip)
 elseif(APPLE)

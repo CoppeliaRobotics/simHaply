@@ -88,6 +88,7 @@ int main()
         }
         {
             Haply::HardwareAPI::Devices::Handle::VersegripStatusResponse resp = devHandle.GetVersegripStatus();
+            cout << " q=[" << resp.quaternion[0] << ", " << resp.quaternion[1] << ", " << resp.quaternion[2] << ", " << resp.quaternion[3] << "]";
             cout << " btns=" << int(resp.buttons);
         }
         cout << endl;

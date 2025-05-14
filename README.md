@@ -1,5 +1,7 @@
 # Haply's HardwareAPI plugin
 
+[//]: # (plugin_doc_begin)
+
 Plugin to interface with Haply devices, such as the Inverse3 and the VerseGrip.
 
 Note: for every open device (e.g. Inverse3, VerseGrip, ...) the plugin spawns a separate thread for running the control loop at 1kHz.
@@ -17,6 +19,8 @@ Enter this mode by calling `simHaply.setInverse3Constraint`.
 Attracts the end-effector towards a specific point (x, y, z) with a force proportional to distance, whose gain and saturation can be set with `simHaply.setInverse3ForceParams`.
 
 Enter this mode by calling `simHaply.setInverse3Attractor`.
+
+[//]: # (plugin_doc_end)
 
 ### Compiling
 
